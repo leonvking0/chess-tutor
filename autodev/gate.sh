@@ -14,6 +14,7 @@ run() { # run NAME CMD...  — on non-zero exit, last line is "GATE FAIL step=NA
 }
 
 run secrets bash autodev/probes/secret-leak.sh --repo . --base "${GATE_BASE:-origin/main}"
+run integrity bash autodev/probes/oracle-integrity.sh
 run perft node --test test/perft.test.js
 run core-smoke node autodev/smoke/core-smoke.mjs
 run core-api node --test test/san.test.js test/status.test.js
