@@ -21,14 +21,18 @@
       },
       "timeout_sec": 1800,
       "concurrency": 5,
-      "health_check": { "path": "/models", "expect_model": "qwen3.6-27b", "timeout_sec": 4 }
+      "health_check": {
+        "path": "/models",
+        "expect_model": "qwen3.6-27b",
+        "timeout_sec": 4
+      }
     },
     "codex": {
       "bin": "codex",
       "model": "gpt-5.5",
       "reasoning_effort": "xhigh",
       "service_tier": "fast",
-      "timeout_sec": 300,
+      "timeout_sec": 900,
       "_comment": "operator-pinned (D34); --ignore-user-config skips ~/.codex/config.toml so all three are passed as -c flags; a null value omits its flag (codex built-in default)"
     }
   }
