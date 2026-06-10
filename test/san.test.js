@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import { strictEqual } from 'node:assert/strict';
+import { strictEqual, deepStrictEqual } from 'node:assert/strict';
 import { parseFen } from '../src/core/chess.js';
 import { toSan } from '../src/core/san.js';
 import { Game } from '../src/core/game.js';
@@ -87,7 +87,7 @@ test('checkmate # replaces + (never +#): fool\'s mate 1.f3 e5 2.g4 Qh4#', () => 
   g.move({ from: 'g2', to: 'g4' });
   const san = g.move({ from: 'd8', to: 'h4' });
   strictEqual(san, 'Qh4#');
-  strictEqual(g.history(), ['f3', 'e5', 'g4', 'Qh4#']);
+  deepStrictEqual(g.history(), ['f3', 'e5', 'g4', 'Qh4#']);
   // mate suffix is '#' alone, never '+#'
   strictEqual(san.includes('+'), false);
 });
