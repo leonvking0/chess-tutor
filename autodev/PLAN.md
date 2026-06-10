@@ -50,7 +50,7 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
       - MUST-NOT: import anything outside the Node/browser standard runtime. Zero npm dependencies. No
         Date.now()/Math.random() in `chess.js` (engines own randomness later).
 
-- [ ] M1 — Game wrapper: SAN, status, undo
+- [x] M1 — Game wrapper: SAN, status, undo (PR #5)
     goal: NEW files (weak model, GREEN): `src/core/game.js` (a `Game` class/factory wrapping the core),
       `src/core/san.js` (move → SAN string), `test/san.test.js`, `test/status.test.js`. EDIT (strong, RED):
       add a `core-api` step to `autodev/gate.sh`. `Game` exposes: `legalMoves()`, `move(m)` (apply +
@@ -154,8 +154,14 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
 - Canonical EP in `toFen`: only emit the en-passant target square when an enemy pawn can
   actually capture (strict-FEN / Stockfish convention). M0 sets `ep` on every double-push —
   byte-exact for the test positions but non-canonical vs external engines (M0 review P2, latent).
+- `Game.history()` returns the internal `_history` array by reference; a caller could mutate it.
+  Defensive copy (`return [...this._history]`) — M1 review P2 nice-to-have (non-blocking; gate reads read-only).
 
 ## Plan changelog (append-only)
 - v1: greenfield plan from operator interview — M0 oracle+rules(perft), M1 game/SAN/status/undo,
   M2 engines+contract+full-game smoke, M3 browser UI+static-serve smoke, M4 teaching aids.
 - M0 closed (PR #1): oracle + rules core landed gate-green, review-clean. Backlog: canonical-EP toFen.
+- M1 closed (PR #5): Game wrapper (SAN/status/undo) + san.js, gate `core-api` step. Weak-gen impl (Qwen),
+  0 fix rounds; 1 strong-model test-assert repair (strictEqual→deepStrictEqual on an array literal).
+  Recovered a crashed prior attempt that had weakened the committed acceptance tests — restored the
+  frozen tests and regenerated only the implementation. Backlog: history() defensive copy.
