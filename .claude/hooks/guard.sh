@@ -36,6 +36,12 @@ fi
 [[ "$TOOL" == "Bash" ]] || exit 0
 CMD="$(jq -r '.tool_input.command // ""' <<<"$EVENT" 2>/dev/null)"
 [[ -z "$CMD" ]] && exit 0
+# Verb-scrub (B2 finding F-1, D40): fd-duplications (2>&1, >&2) and >/dev/null are not file writes.
+# Strip them before WRITE-VERB matching only — otherwise `bash .claude/bin/codex-review.sh … 2>&1 | tail`
+# (the review skill's own documented invocation) and gate RUNS during implement (`bash autodev/gate.sh
+# 2>&1`) false-block on the bare `>`. Real redirects to real paths (`> f`, `2> f`, `&>> f`) survive
+# the scrub and still match. Path greps stay on the unscrubbed $CMD.
+SCRUB="$(sed -E 's%[0-9]*>&[0-9]+%%g; s%[0-9]*>[[:space:]]*/dev/null%%g' <<<"$CMD")"
 
 # ---- whole-command rules (token presence anywhere) ------------------------------------------
 # rule 9: HALT is operator-only
@@ -45,12 +51,12 @@ if grep -Eq '(^|[^[:alnum:]_])(rm|mv|unlink)\b[^|;&]*\bHALT\b' <<<"$CMD" \
 fi
 # rule 7 (Bash side, G6): any write-capable reference to operator-only surfaces, fail-closed
 if grep -Eq '\.claude/(settings[^[:space:]]*\.json|hooks|bin)' <<<"$CMD" \
-   && grep -Eq '(sed[[:space:]]+-i|\bawk\b|\btee\b|>>|>|\bcp\b|\bmv\b|\bchmod\b|\btruncate\b|\bdd\b|\binstall\b|\brm\b|\bpython3?\b|\bperl\b|\bnode\b)' <<<"$CMD"; then
+   && grep -Eq '(sed[[:space:]]+-i|\bawk\b|\btee\b|>>|>|\bcp\b|\bmv\b|\bchmod\b|\btruncate\b|\bdd\b|\binstall\b|\brm\b|\bpython3?\b|\bperl\b|\bnode\b)' <<<"$SCRUB"; then
   block "rule 7: .claude/{settings*.json,hooks,bin} are operator-only — no shell writes (any verb)."
 fi
 # rule 8 (Bash side, G5): no gate.sh writes during implement
 if [[ "$(phase)" == "implement" ]] && grep -Eq 'autodev/gate\.sh' <<<"$CMD" \
-   && grep -Eq '(sed[[:space:]]+-i|\btee\b|>>|>|\bcp\b|\bmv\b|\bchmod\b|\btruncate\b|\bdd\b|\bpython3?\b|\bperl\b|\bnode\b)' <<<"$CMD"; then
+   && grep -Eq '(sed[[:space:]]+-i|\btee\b|>>|>|\bcp\b|\bmv\b|\bchmod\b|\btruncate\b|\bdd\b|\bpython3?\b|\bperl\b|\bnode\b)' <<<"$SCRUB"; then
   block "rule 8: autodev/gate.sh is not writable during implement (any shell verb) — gate growth is the orchestrator's at S3g."
 fi
 # rule 6 (G1+G7): secret-shaped PATH token (anchored, excludes scratch .env), broadened verbs + creds cmd
@@ -59,7 +65,7 @@ if grep -Eq 'gh[[:space:]]+auth[[:space:]]+token' <<<"$CMD"; then
 fi
 if grep -Eq '(^|[/"'"'"'[:space:]=])\.env\b|id_rsa|id_ed25519|id_ecdsa|\.pem|\.key\b|secrets|credentials|hosts\.yml|\.kdbx|\.gpg' <<<"$CMD" \
    && ! grep -Eq '\.autodev/[^[:space:]]*\.env' <<<"$CMD" \
-   && grep -Eq '(\bcat\b|\bcp\b|\bmv\b|\btee\b|\bsed\b|\bawk\b|\bbase64\b|\bxxd\b|\bod\b|\bstrings\b|\bcurl\b|\bnc\b|>>|>|git[[:space:]]+(diff|show|log[[:space:]]+-p))' <<<"$CMD"; then
+   && grep -Eq '(\bcat\b|\bcp\b|\bmv\b|\btee\b|\bsed\b|\bawk\b|\bbase64\b|\bxxd\b|\bod\b|\bstrings\b|\bcurl\b|\bnc\b|>>|>|git[[:space:]]+(diff|show|log[[:space:]]+-p))' <<<"$SCRUB"; then
   block "rule 6: secret-shaped path in a read/copy/exfil command — refused."
 fi
 # rule 10: no repo-admin mutation
