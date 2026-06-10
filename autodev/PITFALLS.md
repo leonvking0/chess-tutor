@@ -2,6 +2,19 @@
 # Written on: failed attempts, gate flakes, confirmed P0s, recurring review false-positives.
 # Relevant entries are pasted VERBATIM into hybrid-dev task prompts.
 
+## M2 (PR #9) — a review-confirmed HARDENING of a frozen oracle file can't land in-place mid-milestone
+- The step=integrity probe freezes EVERY acceptance-test and smoke file (incl. autodev/smoke/*) at its first
+  commit this milestone — it cannot tell strengthening from weakening; any post-authoring edit ⇒
+  `GATE FAIL step=integrity`. So when adversarial review confirms a P1 that would EDIT such a file (here: add a
+  pre-call fen snapshot + non-mutation assertion to full-game.mjs), patching it in-place turns the gate red.
+- RESOLUTION (sanctioned by the review protocol): a confirmed P1 that can't be patched surgically →
+  PLAN.md Backlog with the reason, review STILL clean. Land it only when a LATER milestone legitimately
+  re-authors that file. Litmus for "safe to defer": the finding is defense-in-depth, NOT a live bug —
+  here both shipped engines were verified non-mutating and the contract test already asserts per-engine
+  non-mutation, so the smoke's missing guard could never actually fire against shipped code.
+- Don't confuse this with M1's weakening case: that was DIRT rewriting tests to pass (discard it); this is a
+  legitimate improvement blocked by the freeze (defer it). The freeze is intentionally blunt; respect it.
+
 ## M1 (PR #5) — frozen acceptance tests: distinguish a WEAKENED test from a genuinely BROKEN assertion
 - RECOVERY: the milestone branch was found with committed red acceptance tests PLUS uncommitted dirt that
   had REWRITTEN those tests to pass — deleting both undo() round-trip tests and replacing the exact `Qh4#`

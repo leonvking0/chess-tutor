@@ -1,18 +1,23 @@
 # STATE — machine-maintained cache. If git/gh disagree with this file, git/gh win.
 status: ready                # ready | BLOCKED
-milestone: M2                # M2 — Engine interface + RandomEngine + SimpleAI + contract + full-game smoke
+milestone: M3                # M3 — Browser UI: interactive board, click-to-move, engine reply, engine switch
 attempts: 0                  # attempts at THIS milestone; 3 ⇒ BLOCKED
 last_failure: none           # canonical signature "GATE FAIL step=<name>", or none
 blocked_reason: none
-last_session: M1 merged PR #5 (strong=claude-opus-4-8; weak=qwen3.6-27b GREEN-gen src/core/{san,game}.js, 0 fix rounds; 1 strong test-assert repair; codex lane timed out, Lane A+evaluator clean)
-last_gate: green @ M1 close-out (steps: secrets, perft, core-smoke, core-api — core-api 22/22: SAN 14, status+undo 8)
+last_session: M2 merged PR #9 (strong=claude-opus-4-8; weak=qwen3.6-27b GREEN-gen src/engine/{engine,random-engine,simple-ai}.js + test/engine-contract.test.js + autodev/smoke/full-game.mjs, 0 fix rounds, 0 strong repairs; gate grew engine-contract+full-game; review: Lane A+B+evaluator, 1 confirmed P1 deferred-to-backlog (frozen-oracle), 3 P2 backlogged)
+last_gate: green @ M2 close-out (steps: secrets, integrity, perft, core-smoke, core-api, engine-contract 8/8, full-game → terminal status under 200 plies)
 updated: 2026-06-10
 
 ## Notes (this milestone only; wiped at close-out)
-- M2 adds src/engine/{engine.js,random-engine.js,simple-ai.js} (weak, GREEN), test/engine-contract.test.js,
-  autodev/smoke/full-game.mjs; RED (strong): add `engine-contract` + `full-game` steps to autodev/gate.sh.
-- Build on the M1 public Game API: legalMoves(), move(m), status(), fen(), history(), undo(). Contract:
-  { name, async bestMove(game) -> move } returning a move from game.legalMoves().
-- Check-detection pattern available (from M1 game.js): flip side, generateMoves, test if any reply lands on
-  the king square — public-API only, no exported attack helper. Reuse if engines need in-check queries.
-- Latent from M0 (Backlog): toFen emits non-canonical EP on every double-push; may bite FEN-compare later.
+- M3 adds the browser UI (weak, GREEN): index.html (board mount id="board", engine-select id="engine"),
+  src/ui/{board.js,app.js,styles.css}, autodev/smoke/serve-smoke.sh. RED (strong): add a `static-serve`
+  step to autodev/gate.sh. Build ONLY on the merged public APIs — no logic forked into the UI.
+- Public surface to reuse: Game (legalMoves/move/undo/history/status/fen) from src/core/game.js;
+  engines from src/engine/{random-engine.js (RandomEngine), simple-ai.js (SimpleAI)}, contract
+  { name, async bestMove(game) -> move }. isLegalMove helper exists in src/engine/engine.js.
+- serve-smoke MUST pick a FREE localhost port, python3 -m http.server, curl / (assert id="board" + id="engine"),
+  curl every module referenced by index.html (expect 200), trap-kill the server, exit non-zero on any miss.
+- Latent (Backlog): full-game smoke non-mutation hardening (M2 review P1, deferred — frozen-oracle); fold into
+  M3 only if M3 legitimately re-authors autodev/smoke/full-game.mjs (it doesn't — M3 adds serve-smoke.sh).
+- Latent (Backlog): canonical-EP toFen (M0), history() defensive copy (M1), SimpleAI mobility weight +
+  unused isLegalMove export (M2).

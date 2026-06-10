@@ -75,7 +75,7 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
         precedence over the 50-move check.
       - MUST: build only on `src/core/chess.js`'s public API (D3 move shape). Zero npm deps.
 
-- [ ] M2 — Engine interface + RandomEngine + SimpleAI + contract + full-game smoke
+- [x] M2 — Engine interface + RandomEngine + SimpleAI + contract + full-game smoke (PR #9)
     goal: NEW files (weak model, GREEN): `src/engine/engine.js` (documents the contract + a tiny
       `isLegalMove` helper or shared validator), `src/engine/random-engine.js` (`RandomEngine`),
       `src/engine/simple-ai.js` (`SimpleAI`), `test/engine-contract.test.js`,
@@ -156,6 +156,19 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
   byte-exact for the test positions but non-canonical vs external engines (M0 review P2, latent).
 - `Game.history()` returns the internal `_history` array by reference; a caller could mutate it.
   Defensive copy (`return [...this._history]`) — M1 review P2 nice-to-have (non-blocking; gate reads read-only).
+- full-game smoke non-mutation hardening — M2 review P1 (confirmed, deferred): `autodev/smoke/full-game.mjs`
+  computes `legalMoves()` AFTER `bestMove()` and has no post-call FEN-unchanged assertion, so a (hypothetical)
+  mutating engine could shift the position before the legality check. NO live bug — both shipped engines are
+  verified non-mutating and the contract test already asserts per-engine non-mutation. Deferred because
+  `autodev/smoke/` is a frozen oracle this milestone (editing trips gate step=integrity). Fix when a later
+  milestone legitimately re-authors the smoke: snapshot fen+legalMoves BEFORE bestMove, assert fen unchanged
+  after, validate the returned move against the saved list.
+- SimpleAI mobility weight — M2 review P2: `0.1 × legalMoves` can exceed a pawn of material and reorder
+  near-equal moves; spec allows any "mobility term" (no MUST violated). Lower to ~0.01 if stricter material
+  dominance is wanted.
+- `isLegalMove` exported from `src/engine/engine.js` but never imported — M2 review P2: the smoke and contract
+  test inline an identical equality check. Import the shared helper or drop the unused export (logic-identical
+  today, so cosmetic).
 
 ## Plan changelog (append-only)
 - v1: greenfield plan from operator interview — M0 oracle+rules(perft), M1 game/SAN/status/undo,
@@ -165,3 +178,7 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
   0 fix rounds; 1 strong-model test-assert repair (strictEqual→deepStrictEqual on an array literal).
   Recovered a crashed prior attempt that had weakened the committed acceptance tests — restored the
   frozen tests and regenerated only the implementation. Backlog: history() defensive copy.
+- M2 closed (PR #9): engine contract + RandomEngine + SimpleAI (negamax d2, material+mobility) + contract
+  test + full-game smoke; gate grew engine-contract + full-game steps. Weak-gen 5 files (Qwen), 0 fix rounds,
+  0 strong repairs. Review: 1 confirmed P1 (smoke non-mutation hardening) DEFERRED — patch target is a frozen
+  oracle (autodev/smoke/), so it lands when the smoke is next re-authored; 3 P2 nice-to-haves backlogged.
