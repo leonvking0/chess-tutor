@@ -7,7 +7,7 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
 
 ## Milestones
 
-- [ ] M0 — Oracle + rules core (FEN, legal move generation, perft)
+- [x] M0 — Oracle + rules core (FEN, legal move generation, perft) (PR #1)
     goal: Land the real `autodev/gate.sh` AND the UI-independent rules core that satisfies AC-1.
       NEW files (weak model, GREEN): `src/core/chess.js` (one self-contained ES module) and
       `test/perft.test.js` and `autodev/smoke/core-smoke.mjs`. EDITS (strong model, RED):
@@ -151,7 +151,11 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
 - PGN import/export.
 - Mobile-responsive board layout.
 - Optional: seedable RNG for RandomEngine to make full-game smoke fully reproducible.
+- Canonical EP in `toFen`: only emit the en-passant target square when an enemy pawn can
+  actually capture (strict-FEN / Stockfish convention). M0 sets `ep` on every double-push —
+  byte-exact for the test positions but non-canonical vs external engines (M0 review P2, latent).
 
 ## Plan changelog (append-only)
 - v1: greenfield plan from operator interview — M0 oracle+rules(perft), M1 game/SAN/status/undo,
   M2 engines+contract+full-game smoke, M3 browser UI+static-serve smoke, M4 teaching aids.
+- M0 closed (PR #1): oracle + rules core landed gate-green, review-clean. Backlog: canonical-EP toFen.
