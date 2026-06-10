@@ -1,0 +1,12 @@
+{
+  "name": "chess-tutor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure static chess tutor — vanilla ES modules, zero npm dependencies.",
+  "scripts": {
+    "test": "node --test",
+    "smoke": "node autodev/smoke/core-smoke.mjs",
+    "serve": "python3 -m http.server 8000"
+  }
+}

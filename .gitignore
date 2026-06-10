@@ -1,3 +1,16 @@
 .autodev/
 HALT
 autodev/models.local.json
+
+# tool caches / build artifacts
+node_modules/
+dist/
+build/
+target/
+coverage/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.log
+.DS_Store
