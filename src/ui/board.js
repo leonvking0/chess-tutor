@@ -17,41 +17,51 @@ export function renderBoard(mountEl, fen, handlers) {
     
     for (let i = 0; i < rowStr.length; i++) {
       const char = rowStr[i];
-      
+
       if (char >= '1' && char <= '8') {
-        file += parseInt(char, 10);
+        // empty run: emit a clickable square for EACH empty cell so every
+        // destination square exists in the DOM (click-to-move targets empties)
+        const empty = parseInt(char, 10);
+        for (let k = 0; k < empty; k++) {
+          mountEl.appendChild(makeSquare(file, rank, null, handlers));
+          file++;
+        }
       } else {
-        const fileChar = String.fromCharCode(97 + file);
-        const squareName = fileChar + rank;
-        
-        const squareDiv = document.createElement('div');
-        squareDiv.className = 'square';
-        squareDiv.dataset.square = squareName;
-        
-        if ((file + rank) % 2 === 0) {
-          squareDiv.classList.add('dark');
-        } else {
-          squareDiv.classList.add('light');
-        }
-        
-        if (PIECES[char]) {
-          const pieceSpan = document.createElement('span');
-          pieceSpan.className = 'piece';
-          pieceSpan.textContent = PIECES[char];
-          squareDiv.appendChild(pieceSpan);
-        }
-        
-        if (handlers && typeof handlers.onSquareClick === 'function') {
-          squareDiv.addEventListener('click', () => {
-            handlers.onSquareClick(squareName);
-          });
-        }
-        
-        mountEl.appendChild(squareDiv);
+        mountEl.appendChild(makeSquare(file, rank, char, handlers));
         file++;
       }
     }
   }
+}
+
+function makeSquare(file, rank, pieceChar, handlers) {
+  const fileChar = String.fromCharCode(97 + file);
+  const squareName = fileChar + rank;
+
+  const squareDiv = document.createElement('div');
+  squareDiv.className = 'square';
+  squareDiv.dataset.square = squareName;
+
+  if ((file + rank) % 2 === 0) {
+    squareDiv.classList.add('dark');
+  } else {
+    squareDiv.classList.add('light');
+  }
+
+  if (pieceChar && PIECES[pieceChar]) {
+    const pieceSpan = document.createElement('span');
+    pieceSpan.className = 'piece';
+    pieceSpan.textContent = PIECES[pieceChar];
+    squareDiv.appendChild(pieceSpan);
+  }
+
+  if (handlers && typeof handlers.onSquareClick === 'function') {
+    squareDiv.addEventListener('click', () => {
+      handlers.onSquareClick(squareName);
+    });
+  }
+
+  return squareDiv;
 }
 
 export function highlightSquares(mountEl, squares, selectedSquare) {
