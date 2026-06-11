@@ -1,6 +1,6 @@
 # STATE — machine-maintained cache. If git/gh disagree with this file, git/gh win.
 status: ready                # ready | BLOCKED
-milestone: DONE              # no `- [ ]` left in PLAN.md → next session reports PLAN-COMPLETE
+milestone: M5-canary         # DELIBERATE retry probe (operator) — remove after state-pr.sh fires
 attempts: 0                  # attempts at THIS milestone; 3 ⇒ BLOCKED
 last_failure: none           # canonical signature "GATE FAIL step=<name>", or none
 blocked_reason: none

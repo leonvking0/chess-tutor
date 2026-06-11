@@ -146,6 +146,18 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
         free-port serve harness from M3 (don't fork a second server).
       - MUST-NOT: add npm deps; don't fork core/SAN logic into the UI — reuse `src/core` and `src/engine`.
 
+- [ ] M5-canary — DELIBERATE retry probe (operator test of the RETRY/state-pr.sh path; remove after)
+    goal: NEW file (weak model, GREEN): src/canary.js exporting `export const CANARY = true;` — nothing else.
+      This milestone is engineered to FAIL the gate so the RETRY path (book lesson via state-pr.sh,
+      attempts++) is exercised exactly once. The accept asserts a contradiction no code can satisfy.
+    accept:
+      - node -e "require('assert').strictEqual(1, 2)"   # IMPOSSIBLE — always exits non-zero; not fixable by any code
+    landmines:
+      - MUST: generate ONLY src/canary.js with `export const CANARY = true;`. Do not touch any other file.
+      - NOTE: the accept command is intentionally impossible. After one strong-model fix round cannot
+        make it pass, take the RETRY path — do NOT edit the accept command (PLAN is the PM's), do NOT
+        weaken any gate step. This is a deliberate probe of attempt-bookkeeping + state-pr.sh.
+
 ## Backlog (review nice-to-haves + parked ideas; triaged every plan-refresh)
 - Threefold-repetition detection (status enum would gain `draw-repetition`).
 - PGN import/export.
