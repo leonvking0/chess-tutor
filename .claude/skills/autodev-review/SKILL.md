@@ -7,7 +7,7 @@ description: The two-lane adversarial review loop — one Claude lane + one code
 
 Precondition: the branch is gate-green and ALL reviewable work is committed (the staged diff must BE what merges). Default branch: current.
 
-## Round 1 — two blind lanes in parallel
+## Round 1 — two blind lanes (sequential under the headless driver)
 
 1. **Stage once:**
    ```
@@ -16,8 +16,8 @@ Precondition: the branch is gate-green and ALL reviewable work is committed (the
    # .autodev/review/m<n>-r1-meta.md: milestone goal + accept commands (verbatim from PLAN.md),
    # git diff --stat, branch, HEAD sha, "round: 1"
    ```
-2. **Lane B first (background):** `bash .claude/bin/codex-review.sh "$(pwd)" .autodev/review/m<n>-r1.diff .autodev/review/m<n>-r1-meta.md .autodev/review/m<n>-r1-codex.json` — run it in the background, then immediately spawn Lane A. **After Lane A returns, WAIT for the background codex job to exit** (it self-times-out at the configured limit) before reading its output or declaring it failed — do not treat a still-running lane as a missing file. Lane B exit ≠ 0 (or output absent after it exits) → **log one line** (STATE Notes + the PR comment: "codex lane skipped: <reason>") **and proceed with Lane A alone — a codex outage NEVER blocks.**
-3. **Lane A:** spawn the `adversarial-reviewer` agent with the DIFF_FILE/META_FILE paths and the milestone's accept lines. The lanes never see each other (independent signals — the measured cross-vendor win depends on blindness).
+2. **Lane A:** spawn the `adversarial-reviewer` agent with the DIFF_FILE/META_FILE paths and the milestone's accept lines (this Task blocks until the subagent returns, ~1–2 min). The lanes never see each other (independent signals — the measured cross-vendor win depends on blindness; sequential execution preserves it).
+3. **Lane B (codex) — FOREGROUND, blocking:** `bash .claude/bin/codex-review.sh "$(pwd)" .autodev/review/m<n>-r1.diff .autodev/review/m<n>-r1-meta.md .autodev/review/m<n>-r1-codex.json` — run it in the **FOREGROUND with the Bash `timeout` set to its max (600000 ms)** and let the call **block this turn** until codex exits. codex's own `timeout_sec` is pinned BELOW that Bash cap (≤570s, models.json) so it self-skips cleanly rather than being killed by the tool. **NEVER background it (`&` / `run_in_background`) and then yield the turn or await a completion notification** — this session is headless `claude -p`: the instant you yield, the process ENDS, the driver finds no `.autodev/result`, and records a crash (D46, dogfood-found — M4 died exactly here while a slow gpt-5.5/xhigh codex ran backgrounded and the agent yielded to "wait for the notification"). Lane B exit ≠ 0 / timed out / output absent → **log one line** (STATE Notes + the PR comment: "codex lane skipped: <reason>") **and proceed with Lane A alone — a codex outage NEVER blocks.**
 4. **Evaluator:** spawn `finding-evaluator` with both lanes' findings normalized to `(lane, severity, file:line, finding, fix)` + both verified-claims lists. Only its **confirmed** bucket gets patched.
 5. **Patch:** apply confirmed findings yourself — direct surgical diffs (Qwen is structurally denied outside implement). Then `git add <files> && git commit -m "M<n>: review r1 fixes"` and re-run `bash autodev/gate.sh` + accept commands. nice-to-have → PLAN.md `## Backlog`; recurring false-positives → PITFALLS.md.
 

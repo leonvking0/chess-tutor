@@ -32,8 +32,8 @@
       "model": "gpt-5.5",
       "reasoning_effort": "xhigh",
       "service_tier": "fast",
-      "timeout_sec": 900,
-      "_comment": "operator-pinned (D34); --ignore-user-config skips ~/.codex/config.toml so all three are passed as -c flags; a null value omits its flag (codex built-in default)"
+      "timeout_sec": 570,
+      "_comment": "operator-pinned (D34); --ignore-user-config skips ~/.codex/config.toml so all three are passed as -c flags; a null value omits its flag. timeout_sec MUST stay <600 (D46): review runs codex FOREGROUND under a 600000ms Bash cap, so 570 self-skips cleanly."
     }
   }
 }
