@@ -125,7 +125,7 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
       - MUST: legal-destination highlighting comes from `game.legalMoves()` filtered by the clicked square.
       - MUST-NOT: any framework, bundler, or npm dependency; no remote asset fetches (localhost/static only).
 
-- [ ] M4 — Teaching aids in the UI: hint, SAN move list, undo
+- [x] M4 — Teaching aids in the UI: hint, SAN move list, undo (PR #12)
     goal: EDITS (strong model, RED — touches existing UI): wire a hint button (`id="hint"`), a SAN
       move-history panel (`id="moves"`), and an undo button (`id="undo"`) into `index.html` /
       `src/ui/app.js` (+ small `src/ui/teaching.js` if helpful, NEW = weak model). EDIT (strong, RED):
@@ -179,6 +179,14 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
   but add a `busy` guard if engine reply ever truly suspends.
 - `src/ui/board.js` square coloring is inverted vs standard (a1 renders light; should be dark) — M3 Lane-A P2,
   cosmetic, no functional impact. Flip the `(file+rank)%2` parity if board orientation polish is wanted.
+- UI engine-reply re-entrancy seam — M4 review (Lane A P2 / Lane B P1, evaluator: latent nice-to-have). While
+  `await activeEngine.bestMove(game)` is in flight inside `engineReply()`, a click on undo/hint mutates history;
+  `engineReply` then resumes and applies the stale `mv` (no re-validation before `game.move(mv)`). NOT reachable
+  with the shipped engines: `RandomEngine`/`SimpleAI` `bestMove` are purely synchronous async bodies with zero
+  yield points, so the awaited reply resolves on the microtask queue before any macrotask click can interleave.
+  Becomes real the instant an engine truly yields (timer/worker/network). Fix when that lands: an engine-pending
+  busy-guard that disables board/hint/undo while a reply is outstanding, AND re-validate `mv` via the shared
+  `isLegalMove` against `game.legalMoves()` before applying.
 
 ## Plan changelog (append-only)
 - v1: greenfield plan from operator interview — M0 oracle+rules(perft), M1 game/SAN/status/undo,
@@ -198,3 +206,11 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
   & patched — Lane-B P0 (board.js rendered only occupied squares → empty destinations unclickable, click-to-move
   broken; fixed via makeSquare emitting empty squares) + Lane-A P1 (frozen ui-wiring.test.js was never gated;
   wired in as step=ui-wiring); 3 P2 nice-to-haves backlogged.
+- M4 closed (PR #12): teaching aids — hint button (id="hint"), SAN move-history panel (id="moves"), undo button
+  (id="undo") wired into index.html + src/ui/app.js (+5/+47); serve-smoke.sh grew the three teaching-marker
+  assertions in the SAME free-port harness (re-authored on this branch, the milestone's own oracle — integrity
+  freeze is per-milestone-introducing-commit, so no in-place edit of a frozen file). Gate green unchanged
+  (static-serve runs the grown smoke). Strong-gen (Opus, RED edits to existing UI), no weak-gen needed.
+  Review: Lane A + Lane B (codex) + evaluator — both lanes converged on ONE finding (engine-reply re-entrancy
+  seam); evaluator verified it is latent/unreachable with the shipped synchronous engines (0 confirmed, 0
+  patched, 0 rounds beyond r1) → Backlog. PLAN-COMPLETE: M4 is the final milestone.

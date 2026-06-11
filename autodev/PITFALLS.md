@@ -2,6 +2,25 @@
 # Written on: failed attempts, gate flakes, confirmed P0s, recurring review false-positives.
 # Relevant entries are pasted VERBATIM into hybrid-dev task prompts.
 
+## M4 (PR #12) — a gate-green branch whose review was STAGED but never COMPLETED resumes at S4, not S5; and "async contract" ≠ "actually yields"
+- RESUME DISCIPLINE: the prior session left the M4 branch gate-green (gate-green marker == branch HEAD) but with
+  review round-1 only STAGED (m4-r1.diff + meta written, but NO codex lane, NO verdict, NO `.autodev/review-clean`)
+  — and the `.autodev/review-clean` on disk was the STALE M3 sha (37e433f), not an ancestor of the M4 HEAD and a
+  non-docs delta. Reconcile rule r2 handled this exactly: gate-green-marker==HEAD ⇒ sanctioned resume, but
+  review-clean invalid-at-HEAD ⇒ jump to S4 (re-run the review), NOT S5. Lesson: NEVER trust a review-clean marker
+  by mere existence — it must be an ancestor of HEAD with a docs-only delta, else the review never finished and
+  must be re-run from scratch. A staged diff with no verdict file is an incomplete review, not a passed one.
+- ASYNC-CONTRACT FALSE-POSITIVE (cross-vendor severity split, evaluator-resolved): both lanes flagged the same
+  re-entrancy seam — undo/hint clicked while `await activeEngine.bestMove(game)` is in flight lets `engineReply`
+  resume and apply a stale `mv` (no re-validation before `game.move`). Lane B (codex) scored it P1 reachable-today
+  because the engine contract is `async bestMove`; Lane A scored it P2 latent. Evaluator read the actual engines:
+  RandomEngine/SimpleAI `bestMove` are purely synchronous bodies in an async function — ZERO real await/yield —
+  so they resolve on the microtask queue, which fully drains before the next macrotask (a DOM click) can run; the
+  interleave is UNREACHABLE with shipped code. Verdict: latent nice-to-have → Backlog, NOT a merge blocker. RULE:
+  an `async` signature does not imply a yield point — to rate a re-entrancy finding reachable-today you must find
+  a real suspending await (timer/fetch/worker) in the awaited callee, not just an `async` keyword. Apply-rate 0%
+  on a single converged finding is correct when its reachability hinges on one verifiable code fact the code disproves.
+
 ## M3 (PR #10) — a committed acceptance test the gate never RUNS has zero verdict power; and the UI's only real bug was un-gateable, caught only by the blind cross-vendor lane
 - THE FROZEN-BUT-UNGATED TRAP: the weak model authored `test/ui-wiring.test.js` (15 semantic wiring assertions
   for AC-5) and `oracle-integrity.sh` dutifully FROZE it — but `gate.sh` enumerates test files by name and the
