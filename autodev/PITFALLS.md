@@ -2,6 +2,20 @@
 # Written on: failed attempts, gate flakes, confirmed P0s, recurring review false-positives.
 # Relevant entries are pasted VERBATIM into hybrid-dev task prompts.
 
+## REVERT (PR #14, reverted by PR autodev/revert-14) — a single-id rename slips past a gate that asserts by id, not by linkage
+- WHAT MERGED BADLY: PR #14 renamed `index.html` `<button id="hint">` → `id="hint-BROKEN"` (1-line, deliberate
+  revert-test target). The Hint button still renders, but `src/ui/app.js` does `getElementById('hint')` → null,
+  so the hint wiring is silently dead at runtime. Clean single-parent squash (sha b8ce147) ⇒ plain `git revert`
+  applied with no conflict; gate green immediately after revert (15/15 ui-wiring, 8/8 engine, full-game mate,
+  serve smoke OK).
+- WHY GATE+REVIEW WOULD MISS IT: `ui-wiring.test.js` asserts each control EXISTS by its id and that `app.js`
+  references that id — but it never asserts the HTML id and the JS lookup are the SAME string, nor does the
+  serve smoke click Hint and observe an effect. Rename BOTH sides in lockstep and every existence check still
+  passes. LANDMINE for any future teaching-aid milestone: gate the LINKAGE, not the literals — assert the set of
+  `getElementById('X')` strings in app.js is a subset of the `id="X"` set in index.html (or drive the control in
+  the serve smoke and observe the DOM mutation). An id referenced by JS but absent from the HTML is a P0.
+- No milestone reopened: the revert fully restores the M4-shipped `id="hint"`; M4 remains closed and correct.
+
 ## M4 (PR #12) — a gate-green branch whose review was STAGED but never COMPLETED resumes at S4, not S5; and "async contract" ≠ "actually yields"
 - RESUME DISCIPLINE: the prior session left the M4 branch gate-green (gate-green marker == branch HEAD) but with
   review round-1 only STAGED (m4-r1.diff + meta written, but NO codex lane, NO verdict, NO `.autodev/review-clean`)
