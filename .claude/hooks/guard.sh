@@ -122,7 +122,11 @@ while IFS= read -r C; do
     fi
   fi
 
-  if [[ $GH -eq 1 ]] && grep -Eq '\bpr\b' <<<"$C" && grep -Eq '\bmerge\b' <<<"$C"; then
+  # rule 4 fires ONLY on the `gh … pr merge` SUBCOMMAND (global flags tolerated), never on the word
+  # "merge" appearing elsewhere — `gh pr create --title "… merge …"` / `gh pr comment` with "merge" in
+  # the body must pass (D47, dogfood-found: the /autodev-revert session's first `gh pr create` echoed
+  # PR #14's "bad merge" title and was wrongly blocked). Same subcommand-anchoring discipline as D45.
+  if [[ $GH -eq 1 ]] && grep -Eq '(^|[^[:alnum:]_])gh([[:space:]]+-[^[:space:]]+([[:space:]]+[^[:space:]]+)?)*[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)' <<<"$C"; then
     # rule 4 — fail-closed merge precondition
     grep -q -- '--admin'  <<<"$C" && block "rule 4: --admin merges are forbidden."
     grep -q -- '--squash' <<<"$C" || block "rule 4: merges must be --squash."
