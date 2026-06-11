@@ -2,6 +2,23 @@
 # Written on: failed attempts, gate flakes, confirmed P0s, recurring review false-positives.
 # Relevant entries are pasted VERBATIM into hybrid-dev task prompts.
 
+## M5-canary (attempt 1, no PR) — the RETRY path fires cleanly on an unsatisfiable accept; a canary's failure must NOT be "fixed"
+- DELIBERATE PROBE: M5-canary ships a trivial GREEN file (`src/canary.js` = `export const CANARY = true;`) plus an
+  accept command engineered to be impossible — `node -e "require('assert').strictEqual(1,2)"`. The repo gate.sh
+  was fully GREEN (the new file breaks nothing); ONLY the milestone accept failed (AssertionError, exit 1). The
+  inline `node -e` assert is hermetic — it imports nothing from the repo, so NO source edit can change its verdict.
+- WHAT THE ORCHESTRATOR MUST DO (and did): one strong fix round confirms the contradiction is unsatisfiable, then
+  take the RETRY path WITHOUT editing the accept (PLAN is the PM's) or weakening any gate step (landmines). Book the
+  lesson + attempts++ via state-pr.sh BEFORE teardown, then delete the branch. Signature is an accept failure, not a
+  `GATE FAIL step=<name>` — distinguish "repo gate green, milestone accept red" from a true gate-step failure in the
+  STATE last_failure/last_gate fields so a reader doesn't misread the canary as a broken gate.
+- DON'T DROWN THE CANARY IN COMPUTE: a probe whose only purpose is to exercise attempt-bookkeeping should be cheap.
+  Generating one line via a single weak-model call (honoring "weak model, GREEN") is right; spinning up the full
+  multi-agent hybrid-dev workflow (plan→test-author→review→audit) to emit `CANARY = true;` on a branch that is
+  guaranteed to be torn down is disproportionate AND its built-in test-author phase risks tripping the one-file
+  landmine. OPERATOR FOLLOW-UP: remove the M5-canary block from PLAN.md now that the RETRY path has fired once —
+  leaving it in burns attempts 2 and 3 and then BLOCKs on a milestone no code can ever pass.
+
 ## REVERT (PR #14, reverted by PR autodev/revert-14) — a single-id rename slips past a gate that asserts by id, not by linkage
 - WHAT MERGED BADLY: PR #14 renamed `index.html` `<button id="hint">` → `id="hint-BROKEN"` (1-line, deliberate
   revert-test target). The Hint button still renders, but `src/ui/app.js` does `getElementById('hint')` → null,

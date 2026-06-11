@@ -1,24 +1,27 @@
 # STATE — machine-maintained cache. If git/gh disagree with this file, git/gh win.
 status: ready                # ready | BLOCKED
 milestone: M5-canary         # DELIBERATE retry probe (operator) — remove after state-pr.sh fires
-attempts: 0                  # attempts at THIS milestone; 3 ⇒ BLOCKED
-last_failure: none           # canonical signature "GATE FAIL step=<name>", or none
+attempts: 1                  # attempts at THIS milestone; 3 ⇒ BLOCKED
+last_failure: accept FAIL: node assert strictEqual(1,2) — unsatisfiable by design (canary probe)
 blocked_reason: none
-last_session: M4 merged PR #12 (strong=claude-opus-4-8). RED close-out resume: prior session left the branch
-  gate-green (gate-green marker == branch HEAD d7c0721) with review round-1 staged but NOT completed (no codex
-  lane, no verdict, no review-clean — stale M3 review-clean marker). This session r2-resumed: re-confirmed gate
-  green @ HEAD, ran the full two-lane review (Lane A adversarial-reviewer + Lane B codex/gpt-5.5-xhigh +
-  evaluator). Both lanes converged on ONE finding (engine-reply re-entrancy seam); evaluator verified it
-  latent/unreachable with the shipped synchronous engines (RandomEngine/SimpleAI bestMove have zero yield
-  points) → 0 confirmed, 0 patched, 1 round → Backlog. Implementation was strong-gen (Opus RED edits to the
-  existing UI: hint/moves/undo into index.html + src/ui/app.js; +5 teaching-marker assertions in serve-smoke.sh).
-last_gate: green @ M4 close-out (steps: secrets, integrity, perft, core-smoke, core-api, ui-wiring 15/15,
-  engine-contract 8/8, full-game checkmate@42plies, static-serve → SERVE SMOKE OK)
+last_session: M5-canary attempt 1 — DELIBERATE retry probe (strong=claude-opus-4-8). Orient/preflight all green
+  (HALT absent, gh auth ok, vLLM qwen3.6-27b @ :11435 up, main clean+ff). No prior M5 branch/PR — clean start at
+  attempts 0. S2: weak model emitted src/canary.js = `export const CANARY = true;` (one line), committed on
+  branch autodev/m5-canary (7433b90); repo gate.sh GREEN. S3: ran the milestone accept verbatim —
+  `node -e "require('assert').strictEqual(1,2)"` → AssertionError exit 1 (impossible by design, hermetic inline
+  assert that imports nothing). One strong fix round: no source change can satisfy 1===2; landmines forbid editing
+  the accept or weakening the gate → RETRY (attempts 0→1). Booked via state-pr.sh; branch torn down. RETRY path
+  exercised exactly once as the probe intends.
+last_gate: green @ M5-canary src/canary.js (repo gate.sh full run: secrets, integrity, perft, core-smoke,
+  core-api, ui-wiring, engine-contract, full-game checkmate@78plies, static-serve → SERVE SMOKE OK). The MILESTONE
+  failed only on its intentionally-impossible accept command, not on any gate step.
 updated: 2026-06-10
 
 ## Notes (this milestone only; wiped at close-out)
-- PLAN-COMPLETE: all milestones M0–M4 are merged. The next /autodev-milestone session finds no `- [ ]` line
-  and exits PLAN-COMPLETE. Remaining work lives in PLAN.md `## Backlog` (review nice-to-haves + parked ideas);
-  promote any of it only via /autodev-plan (SPEC is frozen; new scope is a replan, not a milestone tick).
-- M4 latent item now in Backlog: engine-reply re-entrancy busy-guard + mv re-validation — fix when an engine
-  first truly yields (timer/worker/network); harmless with the current synchronous engines.
+- M5-canary is a DELIBERATE operator probe of the RETRY/state-pr.sh/attempts++ path; its accept command is
+  intentionally unsatisfiable. It is NOT real product scope. attempts now 1/3. The operator's intent ("remove
+  after state-pr.sh fires") is that this milestone be removed from PLAN.md once the RETRY path has fired —
+  otherwise the next two sessions will burn attempts 2 and 3 and then BLOCK on a milestone no code can pass.
+  Recommend the operator delete the M5-canary block from PLAN.md (or rerun /autodev-plan) before the next loop.
+- Real product work (M0–M4) is all merged; remaining ideas live in PLAN.md `## Backlog` and are promotable only
+  via /autodev-plan (SPEC frozen). M4 latent re-entrancy busy-guard item still parked there.
