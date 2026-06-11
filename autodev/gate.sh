@@ -20,6 +20,7 @@ run core-smoke node autodev/smoke/core-smoke.mjs
 run core-api node --test test/san.test.js test/status.test.js
 run engine-contract node --test test/engine-contract.test.js
 run full-game node autodev/smoke/full-game.mjs
+run static-serve bash autodev/smoke/serve-smoke.sh
 
 if [ -f .autodev/phase ] && [ "$(tr -d '[:space:]' < .autodev/phase)" = "implement" ]; then
   exit 0
