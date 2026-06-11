@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chess Tutor</title>
+  <link rel="stylesheet" href="src/ui/styles.css">
+</head>
+<body>
+  <h1>Chess Tutor</h1>
+  <label for="engine">Engine:</label>
+  <select id="engine">
+    <option value="RandomEngine">RandomEngine</option>
+    <option value="SimpleAI">SimpleAI</option>
+  </select>
+  <div id="status">ongoing</div>
+  <div id="board"></div>
+  <script type="module" src="src/ui/app.js"></script>
+</body>
+</html>
