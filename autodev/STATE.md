@@ -1,8 +1,8 @@
 # STATE — machine-maintained cache. If git/gh disagree with this file, git/gh win.
 status: ready                # ready | BLOCKED
-milestone: M5-canary         # DELIBERATE retry probe (operator) — remove after state-pr.sh fires
-attempts: 1                  # attempts at THIS milestone; 3 ⇒ BLOCKED
-last_failure: accept FAIL: node assert strictEqual(1,2) — unsatisfiable by design (canary probe)
+milestone: DONE              # all `- [ ] M` cleared → next session reports PLAN-COMPLETE
+attempts: 0                  # attempts at THIS milestone; 3 ⇒ BLOCKED
+last_failure: none           # canary probe removed (served its purpose: state-pr.sh verified)
 blocked_reason: none
 last_session: M5-canary attempt 1 — DELIBERATE retry probe (strong=claude-opus-4-8). Orient/preflight all green
   (HALT absent, gh auth ok, vLLM qwen3.6-27b @ :11435 up, main clean+ff). No prior M5 branch/PR — clean start at
