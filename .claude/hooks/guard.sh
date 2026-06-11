@@ -86,22 +86,31 @@ while IFS= read -r C; do
   grep -Eq '(^|[^[:alnum:]_])gh\b'  <<<"$C" && GH=1
 
   if [[ $GIT -eq 1 ]]; then
+    # Anchor rules to the git SUBCOMMAND (first non-flag token after git, global-flags tolerated),
+    # never a bare substring — `git stash push`, `git merge-base`, `git branch --merged`,
+    # `git log --merges`, `git config rebase.x`, and `... $(date +%s)` must NOT trip push/merge/rebase
+    # (D45, dogfood-found: the M1-recovery session had to dodge the `git stash push` false-positive,
+    # and `git merge-base` — which oracle-integrity.sh uses — matched the old `\bmerge\b`). The
+    # subcommand must be followed by whitespace or end-of-clause so `merge` ≠ `merge-base`.
+    GF='([[:space:]]+-[^[:space:]]+([[:space:]]+[^[:space:]]+)?)*'
+    isgit(){ grep -Eq "(^|[^[:alnum:]_])git${GF}[[:space:]]+$1([[:space:]]|\$)" <<<"$C"; }
     # rule 1: push to a protected base, any refspec form OR a bare push while HEAD is protected
-    if grep -Eq '\bpush\b' <<<"$C"; then
+    if isgit push; then
       if grep -Eq '(origin[[:space:]]+(main|master)\b|HEAD:(main|master)\b|:[[:space:]]*(main|master)\b)' <<<"$C"; then
         block "rule 1: push to a protected base. Work on autodev/* and open a PR."
       fi
       BR="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
       [[ "$BR" == "main" || "$BR" == "master" ]] \
         && block "rule 1: refusing to push while HEAD=$BR. Switch to an autodev/* branch."
-      # rule 2: force / history-rewrite / push-delete
-      grep -Eq '(--force\b|[[:space:]]-f\b|--force-with-lease\b|[[:space:]]\+[^[:space:]]|--delete\b|[[:space:]]-d\b|[[:space:]]:[^[:space:]])' <<<"$C" \
+      # rule 2: force / history-rewrite / push-delete (scoped to the push clause; a + refspec starts
+      # with an alnum ref token, so `$(date +%s)` — '+%' — does not match)
+      grep -Eq '(--force\b|[[:space:]]-f\b|--force-with-lease\b|[[:space:]]\+[A-Za-z0-9_][^[:space:]]*:|--delete\b|[[:space:]]-d\b|[[:space:]]:[A-Za-z0-9_/.-]+[[:space:]]*$)' <<<"$C" \
         && block "rule 2: force-push / push-delete is forbidden; branches are append-only."
     fi
     # rule 2: no rebase
-    grep -Eq '\brebase\b' <<<"$C" && block "rule 2: git rebase is forbidden — merge origin/main INTO the branch."
+    isgit rebase && block "rule 2: git rebase is forbidden — merge origin/main INTO the branch."
     # rule 3: git merge — only origin/main INTO an autodev/* branch, or --abort
-    if grep -Eq '\bmerge\b' <<<"$C"; then
+    if isgit merge; then
       BR="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
       if [[ "$BR" == autodev/* ]] && grep -Eq '\bgit\b([[:space:]]+-[^[:space:]]+([[:space:]]+[^[:space:]]+)?)*[[:space:]]+merge([[:space:]]+(--no-ff|--no-edit|--no-commit|--ff-only|-q|--quiet))*[[:space:]]+origin/(main|master)[[:space:]]*$' <<<"$C"; then
         :
