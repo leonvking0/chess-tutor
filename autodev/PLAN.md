@@ -102,7 +102,7 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
         unseeded is fine, but the contract test must not depend on a particular random choice — only on legality.
       - MUST-NOT: introduce npm deps or a search depth that blows the 10-minute gate budget (depth 2 is fine).
 
-- [ ] M3 — Browser UI: interactive board, click-to-move, engine reply, engine switch
+- [x] M3 — Browser UI: interactive board, click-to-move, engine reply, engine switch (PR #10)
     goal: NEW files (weak model, GREEN): `index.html` (board mount `id="board"`, an engine-select control
       `id="engine"`, links the ES modules), `src/ui/board.js` (render board + pieces, highlight legal
       destinations), `src/ui/app.js` (controller: click piece → highlight → click target → apply human move
@@ -170,6 +170,16 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
   test inline an identical equality check. Import the shared helper or drop the unused export (logic-identical
   today, so cosmetic).
 
+- serve-smoke marker check is substring (`grep -q 'id="board"'`) — could match the marker in a comment or
+  string rather than a real element (M3 Lane-B P1, nice-to-have). Substring IS SPEC's machine-checkable bound
+  and the element-level assertion is covered by `test/ui-wiring.test.js` + the inversion-proof; tighten to an
+  element-shape regex only if stricter mount/control proof is wanted.
+- `src/ui/app.js` `onSquareClick` is async with no re-entrancy lock during `await engine.bestMove` (M3 Lane-A P2);
+  benign today (after the human move it's the engine's color, so a stray human click yields no legal source),
+  but add a `busy` guard if engine reply ever truly suspends.
+- `src/ui/board.js` square coloring is inverted vs standard (a1 renders light; should be dark) — M3 Lane-A P2,
+  cosmetic, no functional impact. Flip the `(file+rank)%2` parity if board orientation polish is wanted.
+
 ## Plan changelog (append-only)
 - v1: greenfield plan from operator interview — M0 oracle+rules(perft), M1 game/SAN/status/undo,
   M2 engines+contract+full-game smoke, M3 browser UI+static-serve smoke, M4 teaching aids.
@@ -182,3 +192,9 @@ milestone ends gate-green and extends the gate. accept: commands run from the re
   test + full-game smoke; gate grew engine-contract + full-game steps. Weak-gen 5 files (Qwen), 0 fix rounds,
   0 strong repairs. Review: 1 confirmed P1 (smoke non-mutation hardening) DEFERRED — patch target is a frozen
   oracle (autodev/smoke/), so it lands when the smoke is next re-authored; 3 P2 nice-to-haves backlogged.
+- M3 closed (PR #10): browser UI (index.html + src/ui/{board,app}.js + styles.css) on the merged public APIs;
+  serve-smoke.sh static-serve harness; gate grew `static-serve` + `ui-wiring` steps. Weak-gen 5 files +
+  Opus-authored ui-wiring.test.js (Qwen 0 fix rounds). Review: Lane A + Lane B (codex) + evaluator, 2 confirmed
+  & patched — Lane-B P0 (board.js rendered only occupied squares → empty destinations unclickable, click-to-move
+  broken; fixed via makeSquare emitting empty squares) + Lane-A P1 (frozen ui-wiring.test.js was never gated;
+  wired in as step=ui-wiring); 3 P2 nice-to-haves backlogged.

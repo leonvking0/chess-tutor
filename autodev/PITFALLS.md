@@ -2,6 +2,23 @@
 # Written on: failed attempts, gate flakes, confirmed P0s, recurring review false-positives.
 # Relevant entries are pasted VERBATIM into hybrid-dev task prompts.
 
+## M3 (PR #10) — a committed acceptance test the gate never RUNS has zero verdict power; and the UI's only real bug was un-gateable, caught only by the blind cross-vendor lane
+- THE FROZEN-BUT-UNGATED TRAP: the weak model authored `test/ui-wiring.test.js` (15 semantic wiring assertions
+  for AC-5) and `oracle-integrity.sh` dutifully FROZE it — but `gate.sh` enumerates test files by name and the
+  new suite was never added, so it passed only under an ad-hoc `npm test` and contributed ZERO gate verdict
+  power. Freezing a test ≠ running it. RULE: when a milestone adds a new acceptance/wiring test file, the SAME
+  milestone must append a `run <step> node --test <file>` line to gate.sh — verify the gate actually executes
+  every frozen test (grep the new filename in gate.sh) before review. (Fixed in-milestone: added step=ui-wiring.)
+- UN-GATEABLE UI BUG, CAUGHT BY BLINDNESS: `src/ui/board.js` rendered a clickable DOM square only in the
+  occupied-cell branch; the FEN digit run just did `file += N` with NO element, so empty destination squares
+  (e3/e4) had no clickable div and click-to-move was structurally broken from the start position. NOTHING in the
+  gate could catch this — D6 bounds the UI out of DOM testing, the static-serve smoke only checks HTTP 200 +
+  marker substring, and the wiring test parses source/asserts APIs (no DOM). Lane A (Claude) verified the app.js
+  control flow and MISSED it; Lane B (codex) flagged it P0 by reading the render loop. This is the measured
+  cross-vendor-blindness win in one data point: for un-gateable UI/render logic the second blind lane is the
+  only safety net — never skip Lane B on a UI milestone, and when validating an un-gateable P0 fix, sanity-check
+  it with a throwaway DOM stub (minimal `globalThis.document = { createElement }`) rather than trusting the gate.
+
 ## M2 (PR #9) — a review-confirmed HARDENING of a frozen oracle file can't land in-place mid-milestone
 - The step=integrity probe freezes EVERY acceptance-test and smoke file (incl. autodev/smoke/*) at its first
   commit this milestone — it cannot tell strengthening from weakening; any post-authoring edit ⇒
