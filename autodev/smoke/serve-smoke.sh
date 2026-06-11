@@ -31,6 +31,11 @@ if [ $? -ne 0 ]; then echo "FAIL: cannot fetch /"; exit 1; fi
 printf '%s' "$BODY" | grep -q 'id="board"' || { echo 'FAIL: missing id="board"'; exit 1; }
 printf '%s' "$BODY" | grep -q 'id="engine"' || { echo 'FAIL: missing id="engine"'; exit 1; }
 
+# AC-6 teaching aids: served / must expose the hint button, SAN move-history panel, and undo button.
+printf '%s' "$BODY" | grep -q 'id="hint"' || { echo 'FAIL: missing id="hint"'; exit 1; }
+printf '%s' "$BODY" | grep -q 'id="moves"' || { echo 'FAIL: missing id="moves"'; exit 1; }
+printf '%s' "$BODY" | grep -q 'id="undo"' || { echo 'FAIL: missing id="undo"'; exit 1; }
+
 SRCS="$(printf '%s' "$BODY" | grep -oE 'src="[^"]+"' | sed -E 's/^src="//; s/"$//')"
 [ -n "$SRCS" ] || { echo 'FAIL: no src= modules referenced'; exit 1; }
 

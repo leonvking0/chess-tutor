@@ -1,27 +1,24 @@
 # STATE — machine-maintained cache. If git/gh disagree with this file, git/gh win.
 status: ready                # ready | BLOCKED
-milestone: M4                # M4 — Teaching aids in the UI: hint (id="hint"), SAN move list (id="moves"), undo (id="undo")
+milestone: DONE              # no `- [ ]` left in PLAN.md → next session reports PLAN-COMPLETE
 attempts: 0                  # attempts at THIS milestone; 3 ⇒ BLOCKED
 last_failure: none           # canonical signature "GATE FAIL step=<name>", or none
 blocked_reason: none
-last_session: M3 merged PR #10 (strong=claude-opus-4-8; weak=qwen3.6-27b GREEN-gen index.html + src/ui/{board,app}.js + styles.css + autodev/smoke/serve-smoke.sh, 0 fix rounds; Opus authored test/ui-wiring.test.js + the gate static-serve & ui-wiring steps. Review: Lane A + Lane B (codex) + evaluator, 2 confirmed & patched — Lane-B P0 board.js empty-square render (click-to-move broken) + Lane-A P1 ui-wiring.test.js never gated; 3 P2 backlogged. 2 strong review repairs.)
-last_gate: green @ M3 close-out (steps: secrets, integrity, perft, core-smoke, core-api, ui-wiring 15/15, engine-contract 8/8, full-game, static-serve → SERVE SMOKE OK)
+last_session: M4 merged PR #12 (strong=claude-opus-4-8). RED close-out resume: prior session left the branch
+  gate-green (gate-green marker == branch HEAD d7c0721) with review round-1 staged but NOT completed (no codex
+  lane, no verdict, no review-clean — stale M3 review-clean marker). This session r2-resumed: re-confirmed gate
+  green @ HEAD, ran the full two-lane review (Lane A adversarial-reviewer + Lane B codex/gpt-5.5-xhigh +
+  evaluator). Both lanes converged on ONE finding (engine-reply re-entrancy seam); evaluator verified it
+  latent/unreachable with the shipped synchronous engines (RandomEngine/SimpleAI bestMove have zero yield
+  points) → 0 confirmed, 0 patched, 1 round → Backlog. Implementation was strong-gen (Opus RED edits to the
+  existing UI: hint/moves/undo into index.html + src/ui/app.js; +5 teaching-marker assertions in serve-smoke.sh).
+last_gate: green @ M4 close-out (steps: secrets, integrity, perft, core-smoke, core-api, ui-wiring 15/15,
+  engine-contract 8/8, full-game checkmate@42plies, static-serve → SERVE SMOKE OK)
 updated: 2026-06-10
 
 ## Notes (this milestone only; wiped at close-out)
-- M4 EDITS existing UI (strong, RED): wire hint button (id="hint"), SAN move-history panel (id="moves"),
-  undo button (id="undo") into index.html / src/ui/app.js (+ optional NEW src/ui/teaching.js = weak/GREEN).
-  EDIT (strong, RED): extend the static-serve step (or add teaching-serve) in autodev/gate.sh to assert the
-  teaching markers are served.
-- Reuse the M3 UI: src/ui/app.js controller already holds the Game + active engine + render loop; hint calls
-  the ACTIVE engine's bestMove for the human side and surfaces it WITHOUT applying; move list renders
-  game.history() SAN in order; undo removes the last HUMAN move AND the AI reply (two game.undo() when an AI
-  reply exists), keeping board/list/status in sync. board.js renderBoard()/highlightSquares() are the hooks.
-- serve-smoke.sh is a FROZEN oracle (added M3, byte-identical under integrity). M4 must ADD the teaching-marker
-  assertions to the SAME free-port harness — but editing serve-smoke.sh trips step=integrity. So either (a) the
-  gate teaching step curls the markers separately, or (b) M4 legitimately re-authors serve-smoke.sh on a fresh
-  branch as the milestone's own new oracle (the integrity freeze is per-milestone-introducing-commit). Decide
-  at S1/S2; don't try to patch the frozen smoke in place mid-milestone (see M2/M3 PITFALL).
-- Latent (Backlog): full-game smoke non-mutation hardening (M2 P1, frozen-oracle); serve-smoke substring→element
-  hardening + app.js input-lock + board square-color parity (M3 P2s); canonical-EP toFen (M0); SimpleAI mobility
-  weight + history() defensive copy.
+- PLAN-COMPLETE: all milestones M0–M4 are merged. The next /autodev-milestone session finds no `- [ ]` line
+  and exits PLAN-COMPLETE. Remaining work lives in PLAN.md `## Backlog` (review nice-to-haves + parked ideas);
+  promote any of it only via /autodev-plan (SPEC is frozen; new scope is a replan, not a milestone tick).
+- M4 latent item now in Backlog: engine-reply re-entrancy busy-guard + mv re-validation — fix when an engine
+  first truly yields (timer/worker/network); harmless with the current synchronous engines.

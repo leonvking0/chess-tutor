@@ -12,6 +12,9 @@ function init() {
 	const boardEl = document.getElementById('board');
 	const engineSel = document.getElementById('engine');
 	const statusEl = document.getElementById('status');
+	const hintBtn = document.getElementById('hint');
+	const undoBtn = document.getElementById('undo');
+	const movesEl = document.getElementById('moves');
 
 	function legalFrom(sq) {
 		return game.legalMoves().filter(m => m.from === sq);
@@ -22,12 +25,24 @@ function init() {
 		return st === 'checkmate' || st === 'stalemate' || st === 'draw-50move';
 	}
 
+	function renderMoves() {
+		if (!movesEl) return;
+		movesEl.innerHTML = '';
+		const hist = game.history();
+		for (const san of hist) {
+			const li = document.createElement('li');
+			li.textContent = san;
+			movesEl.appendChild(li);
+		}
+	}
+
 	function draw() {
 		renderBoard(boardEl, game.fen(), { onSquareClick: onSquareClick });
 		if (selected !== null) {
 			const dests = legalFrom(selected);
 			highlightSquares(boardEl, dests.map(m => m.to), selected);
 		}
+		renderMoves();
 	}
 
 	function maybeGameOver() {
@@ -86,9 +101,41 @@ function init() {
 		await engineReply();
 	}
 
+	async function onHint() {
+		if (isOver()) return;
+		let mv;
+		try {
+			mv = await activeEngine.bestMove(game);
+		} catch (e) {
+			console.error(e);
+			return;
+		}
+		if (!mv) return;
+		highlightSquares(boardEl, [mv.from, mv.to], mv.from);
+		if (statusEl) statusEl.textContent = 'Hint: ' + mv.from + mv.to;
+	}
+
+	function onUndo() {
+		const len = game.history().length;
+		if (len === 0) return;
+		// even length => last applied ply was an AI reply (human+AI pair) => undo twice;
+		// odd length => only the human's move is pending (no AI reply yet) => undo once.
+		if (len % 2 === 0) {
+			game.undo();
+			game.undo();
+		} else {
+			game.undo();
+		}
+		selected = null;
+		draw();
+		maybeGameOver();
+	}
+
 	engineSel.addEventListener('change', () => {
 		activeEngine = engines[engineSel.value] || engines.RandomEngine;
 	});
+	if (hintBtn) hintBtn.addEventListener('click', onHint);
+	if (undoBtn) undoBtn.addEventListener('click', onUndo);
 
 	draw();
 }
